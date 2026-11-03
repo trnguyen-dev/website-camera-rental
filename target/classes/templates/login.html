@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập hệ thống | ProCam Rental Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #dce8fc 0%, #eef4ff 50%, #dbeafe 100%);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Các vòng tròn trang trí nền phía sau */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(147, 197, 253, 0.35) 0%, rgba(147, 197, 253, 0) 70%);
+            top: -160px;
+            left: -140px;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.28) 0%, rgba(96, 165, 250, 0) 70%);
+            bottom: -150px;
+            right: -120px;
+            z-index: 0;
+        }
+
+        /* Khung Card chính chia 2 cột */
+        .login-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 920px;
+            min-height: 560px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(15, 35, 95, 0.16), 0 4px 16px rgba(15, 35, 95, 0.06);
+            display: grid;
+            grid-template-columns: 45% 55%;
+            overflow: hidden;
+        }
+
+        /* ================= CỘT TRÁI: BANNER STUDIO ================= */
+        .login-banner {
+            position: relative;
+            background:
+                linear-gradient(180deg,
+                    rgba(14, 42, 110, 0.96) 0%,
+                    rgba(21, 65, 166, 0.88) 42%,
+                    rgba(15, 23, 42, 0.35) 75%,
+                    rgba(15, 23, 42, 0.75) 100%),
+                url('https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=1000&auto=format&fit=crop&q=80') center bottom / cover no-repeat;
+            padding: 44px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        /* Vòng cung trang trí góc trái trên */
+        .login-banner::before {
+            content: '';
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.22);
+            top: -90px;
+            left: -90px;
+            pointer-events: none;
+        }
+
+        .banner-brand {
+            position: relative;
+            z-index: 2;
+            margin-top: 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .banner-camera-svg {
+            width: 74px;
+            height: 62px;
+            flex-shrink: 0;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+        }
+
+        .banner-brand-text {
+            text-align: left;
+        }
+
+        .banner-brand-title {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.05;
+            color: #ffffff;
+        }
+
+        .banner-brand-title span {
+            color: #5bb5ff;
+        }
+
+        .banner-brand-sub {
+            margin-top: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.88);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .banner-brand-sub::before,
+        .banner-brand-sub::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .banner-slogan {
+            position: relative;
+            z-index: 2;
+            margin-top: 28px;
+            font-size: 15.5px;
+            font-style: italic;
+            line-height: 1.55;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 400;
+        }
+
+        .banner-swoosh {
+            margin-top: 8px;
+            width: 140px;
+            height: 12px;
+        }
+
+        /* ================= CỘT PHẢI: FORM ĐĂNG NHẬP ================= */
+        .login-form-panel {
+            padding: 42px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .top-icon-wrap {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 16px;
+            border-radius: 16px;
+            background: linear-gradient(145deg, #2575fc 0%, #1051d6 100%);
+            box-shadow: 0 10px 22px rgba(29, 99, 255, 0.32);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 26px;
+        }
+
+        .welcome-title {
+            text-align: center;
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f1f40;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+        }
+
+        .welcome-subtitle {
+            text-align: center;
+            font-size: 13.5px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        .alert-box {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        .field-group {
+            margin-bottom: 18px;
+        }
+
+        .field-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .field-label i {
+            color: #0f1f40;
+            font-size: 14px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper .left-icon {
+            position: absolute;
+            left: 15px;
+            color: #94a3b8;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 42px 12px 40px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #1e293b;
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #94a3b8;
+        }
+
+        .input-wrapper input:focus {
+            background: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+        }
+
+        .toggle-password-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 15px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-password-btn:hover {
+            color: #1e293b;
+        }
+
+        .btn-login-submit {
+            width: 100%;
+            margin-top: 6px;
+            padding: 13px 20px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #0b63f6 0%, #0052d4 100%);
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(11, 99, 246, 0.28);
+            transition: all 0.2s ease;
+        }
+
+        .btn-login-submit:hover {
+            background: linear-gradient(90deg, #0956d9 0%, #0045b5 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(11, 99, 246, 0.36);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 22px 0 16px;
+            color: #64748b;
+            font-size: 12.5px;
+            font-weight: 500;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .quick-roles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .role-btn {
+            background: #f8fafc;
+            border: 1.5px solid #dbe3ef;
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.18s ease;
+            text-align: left;
+        }
+
+        .role-btn:hover {
+            background: #eff6ff;
+            border-color: #60a5fa;
+            transform: translateY(-1px);
+        }
+
+        .role-btn-icon {
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .role-btn-icon.admin-color {
+            color: #f59e0b;
+        }
+
+        .role-btn-icon.staff-color {
+            color: #1d63ff;
+        }
+
+        .role-btn-text {
+            line-height: 1.3;
+        }
+
+        .role-btn-text strong {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .role-btn-text span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        @media (max-width: 780px) {
+            .login-wrapper {
+                grid-template-columns: 1fr;
+                max-width: 460px;
+            }
+            .login-banner {
+                min-height: 240px;
+                padding: 28px 20px;
+            }
+            .login-form-panel {
+                padding: 32px 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-wrapper">
+    <!-- CỘT TRÁI: BANNER PROCAM RENTAL STUDIO -->
+    <div class="login-banner">
+        <div class="banner-brand">
+            <!-- Icon máy ảnh kết hợp lá khẩu độ giống hệt thiết kế -->
+            <svg class="banner-camera-svg" viewBox="0 0 84 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M56 14H49L44 7H24L19 14H12C6.477 14 2 18.477 2 24V56C2 61.523 6.477 66 12 66H56C61.523 66 66 61.523 66 56V24C66 18.477 61.523 14 56 14Z" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="34" cy="40" r="15" stroke="#60A5FA" stroke-width="4"/>
+                <circle cx="34" cy="40" r="7" fill="white"/>
+                <circle cx="54" cy="24" r="2.5" fill="#60A5FA"/>
+            </svg>
+            <div class="banner-brand-text">
+                <div class="banner-brand-title">Pro<span>Cam</span></div>
+                <div class="banner-brand-sub">Rental Studio</div>
+            </div>
+        </div>
+
+        <div class="banner-slogan">
+            Quản lý cho thuê dễ dàng,<br>
+            hiệu quả hơn mỗi ngày!
+            <div>
+                <svg class="banner-swoosh" viewBox="0 0 150 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 11C42 3 98 2 147 6" stroke="#5bb5ff" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- CỘT PHẢI: FORM ĐĂNG NHẬP -->
+    <div class="login-form-panel">
+        <div class="top-icon-wrap">
+            <i class="fa-solid fa-camera"></i>
+        </div>
+
+        <h1 class="welcome-title">Chào mừng trở lại!</h1>
+        <p class="welcome-subtitle">Đăng nhập để tiếp tục sử dụng hệ thống</p>
+
+        <div th:if="${errorMessage}" class="alert-box alert-error">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <div th:if="${successMessage}" class="alert-box alert-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span th:text="${successMessage}"></span>
+        </div>
+
+        <form id="loginForm" th:action="@{/login}" method="post">
+            <div class="field-group">
+                <label class="field-label" for="username">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Tên đăng nhập</span>
+                </label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user left-icon"></i>
+                    <input type="text" id="username" name="username"
+                           placeholder="Nhập username (vd: admin)" required autofocus>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label" for="password">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Mật khẩu</span>
+                </label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock left-icon"></i>
+                    <input type="password" id="password" name="password"
+                           placeholder="Nhập mật khẩu" required>
+                    <button type="button" class="toggle-password-btn" onclick="togglePasswordVisibility()" title="Hiện/Ẩn mật khẩu">
+                        <i id="eyeIcon" class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login-submit">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                <span>Đăng nhập vào hệ thống</span>
+            </button>
+        </form>
+
+        <div class="divider">Hoặc đăng nhập bằng</div>
+
+        <div class="quick-roles">
+            <button type="button" class="role-btn" onclick="fillAndLogin('admin', 'admin123')">
+                <div class="role-btn-icon admin-color">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="role-btn-text">
+                    <strong>Admin</strong>
+                    <span>(Toàn quyền)</span>
+                </div>
+            </button>
+
+            <button type="button" class="role-btn" onclick="fillAndLogin('nhanvien', 'nv123')">
+                <div class="role-btn-icon staff-color">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div class="role-btn-text">
+                    <strong>Nhân viên</strong>
+                    <span>(Lễ tân)</span>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePasswordVisibility() {
+        const pwdInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+        if (pwdInput.type === 'password') {
+            pwdInput.type = 'text';
+            eyeIcon.className = 'fa-solid fa-eye';
+        } else {
+            pwdInput.type = 'password';
+            eyeIcon.className = 'fa-solid fa-eye-slash';
+        }
+    }
+
+    function fillAndLogin(user, pass) {
+        document.getElementById('username').value = user;
+        document.getElementById('password').value = pass;
+        document.getElementById('loginForm').submit();
+    }
+</script>
+
+</body>
+</html>

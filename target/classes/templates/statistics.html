@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Thống kê & Báo cáo doanh thu')}"></head>
+<body>
+<div class="app-wrapper">
+    <aside th:replace="~{fragments/layout :: sidebar('statistics')}"></aside>
+
+    <div class="main-content">
+        <header th:replace="~{fragments/layout :: topbar('Thống Kê Doanh Thu, Phiếu Quá Hạn & Thiết Bị Thuê Nhiều Nhất')}"></header>
+
+        <main class="page-container">
+            <div th:replace="~{fragments/layout :: alerts}"></div>
+
+            <!-- 1. Thống kê doanh thu theo tháng -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fa-solid fa-chart-line" style="color: #7c3aed;"></i>
+                        1. Thống Kê Doanh Thu Theo Tháng
+                    </h3>
+                    <span class="badge badge-primary" style="font-size: 13px;">
+                        Tổng doanh thu toàn hệ thống:
+                        <strong th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'"></strong>
+                    </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Tháng / Năm</th>
+                            <th>Số lượng phiếu thuê</th>
+                            <th>Doanh thu tiền thuê gốc</th>
+                            <th>Thu phí phạt trễ hạn</th>
+                            <th>Thu phí đền bù hư hỏng</th>
+                            <th>TỔNG DOANH THU THÁNG</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(monthlyRevenues)}">
+                            <td colspan="6" style="text-align: center; padding: 24px; color: var(--text-muted);">
+                                Chưa có dữ liệu doanh thu.
+                            </td>
+                        </tr>
+                        <tr th:each="m : ${monthlyRevenues}">
+                            <td><strong style="color: var(--dark);" th:text="${m.monthLabel}">Tháng 11/2026</strong></td>
+                            <td>
+                                <span class="badge badge-secondary" th:text="${m.orderCount} + ' phiếu'"></span>
+                            </td>
+                            <td style="font-weight: 600;"
+                                th:text="${#numbers.formatDecimal(m.rentalFeeTotal, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            <td style="color: #d97706; font-weight: 600;"
+                                th:text="${#numbers.formatDecimal(m.lateFeeTotal, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            <td style="color: var(--danger); font-weight: 600;"
+                                th:text="${#numbers.formatDecimal(m.damageFeeTotal, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            <td style="font-weight: 700; font-size: 15px; color: var(--primary);"
+                                th:text="${#numbers.formatDecimal(m.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. Danh sách phiếu quá hạn chưa trả -->
+            <div class="card" style="border-color: #fca5a5;">
+                <div class="card-header" style="background: #fef2f2; border-bottom-color: #fecaca;">
+                    <h3 style="color: #b91c1c;">
+                        <i class="fa-solid fa-clock"></i>
+                        2. Danh Sách Phiếu Quá Hạn Chưa Trả (<span th:text="${#lists.size(overdueOrders)}"></span> phiếu)
+                    </h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Mã phiếu</th>
+                            <th>Khách hàng</th>
+                            <th>Số điện thoại &amp; CCCD</th>
+                            <th>Thiết bị đang giữ</th>
+                            <th>Ngày bắt đầu → Hẹn trả</th>
+                            <th>Số ngày quá hạn</th>
+                            <th>Tiền cọc giữ</th>
+                            <th>Xử lý</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(overdueOrders)}">
+                            <td colspan="8" style="text-align: center; padding: 28px; color: #059669; font-weight: 600;">
+                                <i class="fa-solid fa-circle-check"></i> Tuyệt vời! Hiện không có phiếu thuê nào bị quá hạn.
+                            </td>
+                        </tr>
+                        <tr th:each="o : ${overdueOrders}">
+                            <td><strong th:text="${o.orderCode}"></strong></td>
+                            <td style="font-weight: 600;" th:text="${o.customer.fullName}"></td>
+                            <td>
+                                <div style="font-weight: 600; color: var(--primary);" th:text="${o.customer.phone}"></div>
+                                <div style="font-size: 11.5px; color: var(--text-muted);" th:text="'CCCD: ' + ${o.customer.cccd}"></div>
+                            </td>
+                            <td>
+                                <div th:each="item : ${o.items}" style="font-size: 12.5px;">
+                                    • <strong th:text="${item.equipment.code}"></strong> - <span th:text="${item.equipment.name}"></span>
+                                </div>
+                            </td>
+                            <td th:text="${#temporals.format(o.startDate, 'dd/MM/yyyy')} + ' → ' + ${#temporals.format(o.expectedReturnDate, 'dd/MM/yyyy')}"></td>
+                            <td>
+                                <span class="badge badge-danger">
+                                    Quá hạn <span th:text="${o.overdueDays}"></span> ngày
+                                </span>
+                            </td>
+                            <td style="font-weight: 600;"
+                                th:text="${#numbers.formatDecimal(o.totalDeposit, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            <td>
+                                <a th:href="@{/rentals/{id}(id=${o.id})}" class="btn btn-danger btn-sm">
+                                    <i class="fa-solid fa-rotate-left"></i> Nhận trả ngay
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. Thiết bị được thuê nhiều nhất -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fa-solid fa-trophy" style="color: #f59e0b;"></i>
+                        3. Xếp Hạng Thiết Bị Được Thuê Nhiều Nhất
+                    </h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th style="width: 70px;">Hạng</th>
+                            <th>Mã thiết bị</th>
+                            <th>Tên máy ảnh / Thiết bị</th>
+                            <th>Hãng</th>
+                            <th>Danh mục</th>
+                            <th>Số lượt được thuê</th>
+                            <th>Tổng tiền thuê mang lại</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(topEquipments)}">
+                            <td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">
+                                Chưa có dữ liệu thống kê lượt thuê thiết bị.
+                            </td>
+                        </tr>
+                        <tr th:each="eq, stat : ${topEquipments}">
+                            <td>
+                                <span th:if="${stat.index == 0}" class="badge badge-warning" style="font-size: 13px;">
+                                    <i class="fa-solid fa-crown"></i> #1
+                                </span>
+                                <span th:if="${stat.index == 1}" class="badge badge-primary">#2</span>
+                                <span th:if="${stat.index == 2}" class="badge badge-success">#3</span>
+                                <span th:if="${stat.index > 2}" style="font-weight: 600; color: var(--text-muted);"
+                                      th:text="'#' + ${stat.index + 1}"></span>
+                            </td>
+                            <td><strong style="color: var(--primary);" th:text="${eq.code}"></strong></td>
+                            <td style="font-weight: 600;" th:text="${eq.name}"></td>
+                            <td th:text="${eq.brand}"></td>
+                            <td><span class="badge badge-secondary" th:text="${eq.categoryName}"></span></td>
+                            <td>
+                                <span class="badge badge-primary" th:text="${eq.rentalCount} + ' lượt thuê'"></span>
+                            </td>
+                            <td style="font-weight: 700; color: #059669;"
+                                th:text="${#numbers.formatDecimal(eq.totalGeneratedRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>

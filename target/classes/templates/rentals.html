@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Quản lý Phiếu thuê & Nhận trả')}"></head>
+<body>
+<div class="app-wrapper">
+    <aside th:replace="~{fragments/layout :: sidebar('rentals')}"></aside>
+
+    <div class="main-content">
+        <header th:replace="~{fragments/layout :: topbar('Danh sách Phiếu Thuê & Xử Lý Nhận Trả Thiết Bị')}"></header>
+
+        <main class="page-container">
+            <div th:replace="~{fragments/layout :: alerts}"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fa-solid fa-receipt" style="color: var(--primary);"></i>
+                        Danh sách phiếu thuê (<span th:text="${#lists.size(orders)}"></span> phiếu)
+                    </h3>
+                    <a th:href="@{/rentals/create}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-file-circle-plus"></i> Lập phiếu thuê mới
+                    </a>
+                </div>
+
+                <div class="card-body" style="padding-bottom: 16px;">
+                    <form th:action="@{/rentals}" method="get" class="filter-bar">
+                        <input type="text" name="keyword" class="form-control" style="flex: 1; min-width: 240px;"
+                               th:value="${keyword}" placeholder="Tìm theo Mã phiếu (VD: PT-001), Tên khách hàng hoặc SĐT...">
+
+                        <select name="status" class="form-select" style="width: 220px;">
+                            <option value="">-- Tất cả trạng thái phiếu --</option>
+                            <option th:each="s : ${statuses}"
+                                    th:value="${s.name()}"
+                                    th:text="${s.displayName}"
+                                    th:selected="${selectedStatus != null and selectedStatus == s}">
+                            </option>
+                        </select>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-magnifying-glass"></i> Tìm &amp; Lọc
+                        </button>
+                        <a th:href="@{/rentals}" class="btn btn-outline">Đặt lại</a>
+                    </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Mã phiếu</th>
+                            <th>Khách hàng</th>
+                            <th>Thiết bị thuê</th>
+                            <th>Thời gian thuê</th>
+                            <th>Tiền thuê gốc</th>
+                            <th>Tiền cọc</th>
+                            <th>Phí trễ / Hỏng</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(orders)}">
+                            <td colspan="9" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                                Không tìm thấy phiếu thuê nào phù hợp.
+                            </td>
+                        </tr>
+                        <tr th:each="o : ${orders}">
+                            <td>
+                                <a th:href="@{/rentals/{id}(id=${o.id})}" style="font-weight: 700;" th:text="${o.orderCode}"></a>
+                                <div style="font-size: 11px; color: var(--text-muted);"
+                                     th:text="${o.createdBy != null ? 'NV: ' + o.createdBy.fullName : ''}"></div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600;" th:text="${o.customer.fullName}"></div>
+                                <div style="font-size: 12px; color: var(--text-muted);" th:text="${o.customer.phone}"></div>
+                            </td>
+                            <td>
+                                <div th:each="item : ${o.items}" style="font-size: 12.5px;">
+                                    • <strong th:text="${item.equipment.code}"></strong> - <span th:text="${item.equipment.name}"></span>
+                                </div>
+                            </td>
+                            <td>
+                                <div th:text="${#temporals.format(o.startDate, 'dd/MM/yyyy')} + ' → ' + ${#temporals.format(o.expectedReturnDate, 'dd/MM/yyyy')}"></div>
+                                <div style="font-size: 11.5px; color: var(--text-muted);">
+                                    <span th:text="${o.rentalDays} + ' ngày'"></span>
+                                    <span th:if="${o.actualReturnDate != null}"
+                                          th:text="' | Trả: ' + ${#temporals.format(o.actualReturnDate, 'dd/MM/yyyy')}"></span>
+                                </div>
+                            </td>
+                            <td style="font-weight: 600;"
+                                th:text="${#numbers.formatDecimal(o.totalRentalFee, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            <td th:text="${#numbers.formatDecimal(o.totalDeposit, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                            <td>
+                                <span th:if="${o.lateFee.add(o.damageFee).compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                      style="color: var(--danger); font-weight: 600;"
+                                      th:text="${#numbers.formatDecimal(o.lateFee.add(o.damageFee), 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                <span th:unless="${o.lateFee.add(o.damageFee).compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                                      style="color: var(--text-muted);">0 đ</span>
+                            </td>
+                            <td>
+                                <span th:if="${o.overdue}" class="badge badge-danger">
+                                    Quá hạn <span th:text="${o.overdueDays}"></span> ngày
+                                </span>
+                                <span th:unless="${o.overdue}" class="badge"
+                                      th:classappend="${o.status.badgeClass}"
+                                      th:text="${o.status.displayName}"></span>
+                            </td>
+                            <td>
+                                <a th:if="${o.status.name() == 'ACTIVE'}"
+                                   th:href="@{/rentals/{id}(id=${o.id})}"
+                                   class="btn btn-success btn-sm">
+                                    <i class="fa-solid fa-rotate-left"></i> Nhận trả
+                                </a>
+                                <a th:unless="${o.status.name() == 'ACTIVE'}"
+                                   th:href="@{/rentals/{id}(id=${o.id})}"
+                                   class="btn btn-outline btn-sm">
+                                    <i class="fa-solid fa-eye"></i> Chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Lập phiếu thuê thiết bị')}"></head>
+<body>
+<div class="app-wrapper">
+    <aside th:replace="~{fragments/layout :: sidebar('rental-create')}"></aside>
+
+    <div class="main-content">
+        <header th:replace="~{fragments/layout :: topbar('Lập Phiếu Thuê Máy Ảnh & Thiết Bị Quay Phim')}"></header>
+
+        <main class="page-container">
+            <div th:replace="~{fragments/layout :: alerts}"></div>
+
+            <form th:action="@{/rentals/create}" method="post" id="rentalCreateForm">
+                <div class="grid-rental-create">
+                    <!-- Cột trái: Chọn khách hàng, Thời gian thuê & Danh sách thiết bị -->
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="fa-solid fa-user-clock" style="color: var(--primary);"></i>
+                                    1. Thông tin Khách hàng &amp; Thời gian thuê
+                                </h3>
+                                <a th:href="@{/customers}" class="btn btn-outline btn-sm">
+                                    <i class="fa-solid fa-user-plus"></i> Thêm khách hàng mới
+                                </a>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label class="form-label">Chọn khách hàng thuê thiết bị *</label>
+                                    <select name="customerId" class="form-select" required>
+                                        <option value="">-- Chọn khách hàng (Họ tên - SĐT - CCCD) --</option>
+                                        <option th:each="c : ${customers}"
+                                                th:value="${c.id}"
+                                                th:selected="${orderForm.customerId != null and orderForm.customerId == c.id}"
+                                                th:text="${c.fullName + ' | SĐT: ' + c.phone + ' | CCCD: ' + c.cccd}">
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="grid-2" style="gap: 16px;">
+                                    <div class="form-group">
+                                        <label class="form-label">Ngày bắt đầu thuê *</label>
+                                        <input type="date" id="startDate" name="startDate" class="form-control"
+                                               th:value="${orderForm.startDate}" required onchange="onDateRangeChange()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Ngày hẹn trả *</label>
+                                        <input type="date" id="expectedReturnDate" name="expectedReturnDate" class="form-control"
+                                               th:value="${orderForm.expectedReturnDate}" required onchange="onDateRangeChange()">
+                                    </div>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label class="form-label">Ghi chú hợp đồng / Mục đích thuê</label>
+                                    <input type="text" name="note" class="form-control"
+                                           th:value="${orderForm.note}"
+                                           placeholder="VD: Thuê quay phóng sự cưới, đã kiểm tra ngoại hình và phụ kiện đầy đủ...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chọn nhiều thiết bị -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="fa-solid fa-camera" style="color: var(--primary);"></i>
+                                    2. Chọn Thiết bị trong Phiếu thuê (Có thể chọn nhiều thiết bị)
+                                </h3>
+                                <div style="display: flex; gap: 8px;">
+                                    <input type="text" id="eqSearchInput" class="form-control" style="width: 220px; padding: 6px 10px;"
+                                           placeholder="Tìm nhanh tên/mã máy..." oninput="filterEquipmentCards()">
+                                    <select id="eqCatFilter" class="form-select" style="width: 170px; padding: 6px 10px;"
+                                            onchange="filterEquipmentCards()">
+                                        <option value="">Tất cả danh mục</option>
+                                        <option th:each="c : ${categories}" th:value="${c.name}" th:text="${c.name}"></option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="eq-select-grid" id="equipmentGrid">
+                                    <label th:each="e : ${equipments}"
+                                           class="eq-item-card"
+                                           th:attr="data-id=${e.id}, data-name=${e.name.toLowerCase()}, data-code=${e.code.toLowerCase()}, data-cat=${e.category.name}, data-rate=${e.dailyRate}, data-deposit=${e.depositAmount}, data-label=${e.code + ' - ' + e.name}"
+                                           th:classappend="${(orderForm.equipmentIds != null and orderForm.equipmentIds.contains(e.id)) ? 'selected ' : ''} + ${(conflicts != null and conflicts.containsKey(e.id)) ? 'conflict' : ''}">
+                                        <input type="checkbox" name="equipmentIds"
+                                               th:value="${e.id}"
+                                               th:checked="${orderForm.equipmentIds != null and orderForm.equipmentIds.contains(e.id)}"
+                                               onchange="onEquipmentToggle(this)"
+                                               style="margin-top: 4px; width: 17px; height: 17px; accent-color: var(--primary);">
+
+                                        <img th:src="${e.imageUrl != null and !e.imageUrl.isEmpty() ? e.imageUrl : 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=200'}"
+                                             onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1617005082133-548c4dd27f35?w=200&auto=format&fit=crop&q=80';"
+                                             class="eq-thumb" alt="Thumb">
+
+                                        <div class="eq-item-info">
+                                            <div class="eq-code" th:text="${e.code + ' • ' + e.category.name}">CAM-001</div>
+                                            <div class="eq-name" th:text="${e.name}">Sony A7M4</div>
+                                            <div class="eq-price"
+                                                 th:text="${#numbers.formatDecimal(e.dailyRate, 0, 'COMMA', 0, 'POINT')} + ' đ / ngày'"></div>
+                                            <div class="eq-deposit"
+                                                 th:text="'Cọc: ' + ${#numbers.formatDecimal(e.depositAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></div>
+
+                                            <div class="conflict-banner"
+                                                 th:id="'conflict-msg-' + ${e.id}"
+                                                 th:style="${conflicts != null and conflicts.containsKey(e.id)} ? 'display:inline-block;' : 'display:none;'"
+                                                 th:text="${conflicts != null and conflicts.containsKey(e.id) ? conflicts.get(e.id) : ''}">
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột phải: Bảng tự động tính tiền & Xác nhận lập phiếu -->
+                    <div style="position: sticky; top: 84px;">
+                        <div class="card">
+                            <div class="card-header" style="background: #eff6ff; border-bottom-color: #bfdbfe;">
+                                <h3 style="color: #1d4ed8;">
+                                    <i class="fa-solid fa-calculator"></i>
+                                    3. Bảng Tạm Tính Phiếu Thuê
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div style="margin-bottom: 14px;">
+                                    <div style="font-weight: 600; font-size: 13px; margin-bottom: 8px; color: var(--secondary);">
+                                        Thiết bị đã chọn (<span id="selectedCount">0</span>):
+                                    </div>
+                                    <div id="selectedItemsList" style="font-size: 13px; color: var(--text-muted); max-height: 220px; overflow-y: auto;">
+                                        Chưa chọn thiết bị nào.
+                                    </div>
+                                </div>
+
+                                <div class="summary-box">
+                                    <div class="summary-row">
+                                        <span>Số ngày thuê:</span>
+                                        <strong id="rentalDaysText">1 ngày</strong>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span>Tổng đơn giá / ngày:</span>
+                                        <strong id="dailyRateSumText">0 đ</strong>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span>Tiền thuê (<span id="formulaDays">1</span> ngày × giá/ngày):</span>
+                                        <strong id="totalRentalFeeText" style="color: #059669;">0 đ</strong>
+                                    </div>
+                                    <div class="summary-row">
+                                        <span>Tổng tiền đặt cọc:</span>
+                                        <strong id="totalDepositText" style="color: #d97706;">0 đ</strong>
+                                    </div>
+                                    <div class="summary-row total">
+                                        <span>TỔNG THU KHI GIAO MÁY:</span>
+                                        <span id="grandTotalText">0 đ</span>
+                                    </div>
+                                </div>
+
+                                <div style="font-size: 12px; color: var(--text-muted); margin: 12px 0; line-height: 1.5;">
+                                    <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i>
+                                    Hệ thống tự động kiểm tra lịch trống trong khoảng ngày đã chọn và lưu Phiếu thuê + Chi tiết phiếu trong một <strong>Transaction</strong>.
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 14.5px;">
+                                    <i class="fa-solid fa-check-circle"></i> Xác Nhận Lập Phiếu Thuê
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+<script>
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' đ';
+    }
+
+    function calculateDays() {
+        const startVal = document.getElementById('startDate').value;
+        const endVal = document.getElementById('expectedReturnDate').value;
+        if (!startVal || !endVal) return 1;
+        const start = new Date(startVal);
+        const end = new Date(endVal);
+        const diffMs = end - start;
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return -1;
+        return Math.max(1, diffDays);
+    }
+
+    function onEquipmentToggle(checkbox) {
+        const card = checkbox.closest('.eq-item-card');
+        if (checkbox.checked) {
+            card.classList.add('selected');
+        } else {
+            card.classList.remove('selected');
+        }
+        recalculateTotals();
+    }
+
+    function recalculateTotals() {
+        const days = calculateDays();
+        const daysDisplay = days > 0 ? days : 1;
+        document.getElementById('rentalDaysText').textContent = days > 0 ? (days + ' ngày') : 'Ngày không hợp lệ!';
+        document.getElementById('formulaDays').textContent = daysDisplay;
+
+        const checkboxes = document.querySelectorAll('input[name="equipmentIds"]:checked');
+        document.getElementById('selectedCount').textContent = checkboxes.length;
+
+        let dailySum = 0;
+        let depositSum = 0;
+        let html = '';
+
+        checkboxes.forEach(cb => {
+            const card = cb.closest('.eq-item-card');
+            const rate = parseFloat(card.getAttribute('data-rate') || '0');
+            const deposit = parseFloat(card.getAttribute('data-deposit') || '0');
+            const label = card.getAttribute('data-label');
+
+            dailySum += rate;
+            depositSum += deposit;
+
+            html += `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #f1f5f9;">
+                        <span style="color:#0f172a; font-weight:500;">${label}</span>
+                        <span style="color:#059669; font-weight:600;">${formatCurrency(rate)}/ngày</span>
+                     </div>`;
+        });
+
+        document.getElementById('selectedItemsList').innerHTML = html || 'Chưa chọn thiết bị nào.';
+
+        const totalRentalFee = dailySum * daysDisplay;
+        const grandTotal = totalRentalFee + depositSum;
+
+        document.getElementById('dailyRateSumText').textContent = formatCurrency(dailySum);
+        document.getElementById('totalRentalFeeText').textContent = formatCurrency(totalRentalFee);
+        document.getElementById('totalDepositText').textContent = formatCurrency(depositSum);
+        document.getElementById('grandTotalText').textContent = formatCurrency(grandTotal);
+    }
+
+    async function onDateRangeChange() {
+        recalculateTotals();
+        const startVal = document.getElementById('startDate').value;
+        const endVal = document.getElementById('expectedReturnDate').value;
+        if (!startVal || !endVal || endVal < startVal) return;
+
+        try {
+            const resp = await fetch(`/api/equipments/conflicts?startDate=${startVal}&expectedReturnDate=${endVal}`);
+            if (!resp.ok) return;
+            const conflicts = await resp.json();
+
+            document.querySelectorAll('.eq-item-card').forEach(card => {
+                const eqId = card.getAttribute('data-id');
+                const banner = document.getElementById('conflict-msg-' + eqId);
+                if (conflicts[eqId]) {
+                    card.classList.add('conflict');
+                    if (banner) {
+                        banner.style.display = 'inline-block';
+                        banner.textContent = conflicts[eqId];
+                    }
+                } else {
+                    card.classList.remove('conflict');
+                    if (banner) {
+                        banner.style.display = 'none';
+                        banner.textContent = '';
+                    }
+                }
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function filterEquipmentCards() {
+        const kw = document.getElementById('eqSearchInput').value.trim().toLowerCase();
+        const cat = document.getElementById('eqCatFilter').value;
+
+        document.querySelectorAll('.eq-item-card').forEach(card => {
+            const name = card.getAttribute('data-name') || '';
+            const code = card.getAttribute('data-code') || '';
+            const itemCat = card.getAttribute('data-cat') || '';
+
+            const matchKw = !kw || name.includes(kw) || code.includes(kw);
+            const matchCat = !cat || itemCat === cat;
+
+            card.style.display = (matchKw && matchCat) ? 'flex' : 'none';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        recalculateTotals();
+    });
+</script>
+</body>
+</html>

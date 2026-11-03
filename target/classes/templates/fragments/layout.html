@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' | ' + (${systemSettings != null ? systemSettings['shop_name'] : 'ProCam Studio'})">ProCam Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('procam_theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+
+        function toggleDarkMode() {
+            const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            if (next === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+            localStorage.setItem('procam_theme', next);
+            updateThemeButtons();
+        }
+
+        function updateThemeButtons() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            document.querySelectorAll('.theme-toggle-icon').forEach(icon => {
+                icon.className = isDark ? 'fa-solid fa-sun theme-toggle-icon' : 'fa-solid fa-moon theme-toggle-icon';
+            });
+            document.querySelectorAll('.theme-toggle-label').forEach(lbl => {
+                lbl.textContent = isDark ? 'Giao diện Sáng' : 'Giao diện Tối';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', updateThemeButtons);
+    </script>
+</head>
+<body>
+
+<aside th:fragment="sidebar(activeMenu)" class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon">
+            <i class="fa-solid fa-camera-retro"></i>
+        </div>
+        <div class="brand-text">
+            <h2 th:text="${systemSettings != null ? systemSettings['shop_name'] : 'ProCam Studio'}">ProCam Studio</h2>
+            <span th:text="${systemSettings != null ? 'Hotline: ' + systemSettings['shop_phone'] : 'Quản lý Cho thuê Thiết bị'}">Quản lý Cho thuê Thiết bị</span>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section-title">Tổng quan</div>
+        <a th:href="@{/}" class="nav-link" th:classappend="${activeMenu == 'dashboard'} ? 'active'">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>Bảng điều khiển</span>
+        </a>
+
+        <div class="nav-section-title">Nghiệp vụ cho thuê</div>
+        <a th:href="@{/rentals/create}" class="nav-link" th:classappend="${activeMenu == 'rental-create'} ? 'active'">
+            <i class="fa-solid fa-file-circle-plus"></i>
+            <span>Lập phiếu thuê mới</span>
+        </a>
+        <a th:href="@{/rentals}" class="nav-link" th:classappend="${activeMenu == 'rentals'} ? 'active'">
+            <i class="fa-solid fa-receipt"></i>
+            <span>Phiếu thuê &amp; Nhận trả</span>
+        </a>
+
+        <div class="nav-section-title">Quản lý danh mục</div>
+        <a th:href="@{/equipments}" class="nav-link" th:classappend="${activeMenu == 'equipments'} ? 'active'">
+            <i class="fa-solid fa-camera"></i>
+            <span>Máy ảnh &amp; Thiết bị</span>
+        </a>
+        <a th:href="@{/customers}" class="nav-link" th:classappend="${activeMenu == 'customers'} ? 'active'">
+            <i class="fa-solid fa-users"></i>
+            <span>Khách hàng &amp; Lịch sử</span>
+        </a>
+
+        <div th:if="${isAdmin}">
+            <div class="nav-section-title">Quản trị viên (Admin)</div>
+            <a th:href="@{/statistics}" class="nav-link" th:classappend="${activeMenu == 'statistics'} ? 'active'">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Thống kê &amp; Báo cáo</span>
+            </a>
+        </div>
+
+        <div class="nav-section-title">Hệ thống &amp; Tài khoản</div>
+        <a th:href="@{/settings}" class="nav-link" th:classappend="${activeMenu == 'settings'} ? 'active'">
+            <i class="fa-solid fa-gear"></i>
+            <span>Cài đặt</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer" th:if="${currentUser != null}">
+        <div class="user-card">
+            <div class="user-info">
+                <div class="name" th:text="${currentUser.fullName}">Nguyễn Minh Quân</div>
+                <span class="role-badge"
+                      th:classappend="${currentUser.role.name() == 'ADMIN'} ? 'role-admin' : 'role-staff'"
+                      th:text="${currentUser.role.displayName}">Admin</span>
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <a th:href="@{/settings}" class="btn btn-sm btn-outline" style="color: #e2e8f0; border-color: rgba(255,255,255,0.2);" title="Cài đặt tài khoản">
+                    <i class="fa-solid fa-gear"></i>
+                </a>
+                <a th:href="@{/logout}" class="btn btn-sm btn-danger" title="Đăng xuất">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<header th:fragment="topbar(pageTitle)" class="topbar">
+    <div class="topbar-title">
+        <h1 th:text="${pageTitle}">Bảng điều khiển</h1>
+    </div>
+    <div class="topbar-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="toggleDarkMode()" title="Chuyển giao diện Sáng / Tối">
+            <i class="fa-solid fa-moon theme-toggle-icon"></i>
+            <span class="theme-toggle-label">Giao diện Tối</span>
+        </button>
+        <a th:href="@{/rentals/create}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus"></i> Lập phiếu thuê nhanh
+        </a>
+        <a th:href="@{/settings}" class="btn btn-outline btn-sm" title="Mở trang Cài đặt">
+            <i class="fa-solid fa-gear"></i> Cài đặt
+        </a>
+    </div>
+</header>
+
+<div th:fragment="alerts">
+    <div th:if="${successMessage}" class="alert alert-success">
+        <i class="fa-solid fa-circle-check"></i>
+        <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span th:text="${errorMessage}"></span>
+    </div>
+</div>
+
+</body>
+</html>
